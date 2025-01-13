@@ -38,16 +38,27 @@ async fn get_users(pool: web::Data<PgPool>) -> impl Responder {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateUserPayload {
-    name: String,
-    email: String,
+    name: Option<String>,
+    email: Option<String>,
 }
-
 #[post("/users")]
 async fn create_user(
     pool: web::Data<PgPool>,
     payload: web::Json<CreateUserPayload>,
 ) -> impl Responder {
-    let CreateUserPayload { name, email } = payload.into_inner();
+    let payload = payload.into_inner();
+
+    // Deserialization errors
+    let name = match payload.name {
+        Some(name) => name,
+        None => return HttpResponse::BadRequest()
+            .json(build_error_response("bad_request", "Name is required.")),
+    };
+    let email = match payload.email {
+        Some(email) => email,
+        None => return HttpResponse::BadRequest()
+            .json(build_error_response("bad_request", "Email is required.")),
+    };
 
     // Validate input
     if name.trim().is_empty() {
@@ -58,7 +69,7 @@ async fn create_user(
         return HttpResponse::BadRequest()
             .json(build_error_response("bad_request", "Invalid email format."));
     }
-
+    
     let repo = UserRepository { pool: &pool };
     match repo.create_user(&name, &email).await {
         Ok(user) => {

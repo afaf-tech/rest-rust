@@ -1,0 +1,7 @@
+/target
+
+*.db3
+
+.env
+
+*.log

@@ -21,8 +21,7 @@
 - Rust 
 - PostgreSQL
 
-### Setup Config
-create `.env` file with content from `.env.example`
+### Setup Configcreate `.env` file with content from `.env.example`
 
 ### Migrate DB
 Install the sqlx CLI tool:

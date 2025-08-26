@@ -1,20 +1,32 @@
 use serde::Serialize;
+use utoipa::ToSchema;
 
 // Constants for meta information
 const APP_NAME: &str = "afaf-rest-rust";
 const VERSION: &str = "1.0.0";
 
-#[derive(Debug, Serialize)]
+/// Error response structure
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ErrorResponse {
-    meta: Meta,
-    error: String,  // Error code
-    message: String, // Detailed error message
+    /// Metadata about the API
+    pub meta: Meta,
+    /// Error code identifier
+    #[schema(example = "not_found")]
+    pub error: String,
+    /// Detailed error message
+    #[schema(example = "The requested resource was not found")]
+    pub message: String,
 }
 
-#[derive(Debug, Serialize)]
+/// API metadata structure
+#[derive(Debug, Serialize, ToSchema)]
 pub struct Meta {
-    version: String,
-    app: String,
+    /// API version
+    #[schema(example = "1.0.0")]
+    pub version: String,
+    /// Application name
+    #[schema(example = "afaf-rest-rust")]
+    pub app: String,
 }
 
 // Helper function to build the error response
@@ -29,11 +41,16 @@ pub fn build_error_response(error_code: &str, message: &str) -> ErrorResponse {
     }
 }
 
-#[derive(Debug, Serialize)]
+/// Success response structure
+#[derive(Debug, Serialize, ToSchema)]
 pub struct Response<T> {
-    meta: Meta,
-    data: T,
-    message: String,
+    /// Metadata about the API
+    pub meta: Meta,
+    /// Response payload
+    pub data: T,
+    /// Success message
+    #[schema(example = "Operation completed successfully")]
+    pub message: String,
 }
 
 // Helper function to build the success response

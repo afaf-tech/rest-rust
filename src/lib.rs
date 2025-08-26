@@ -1,5 +1,5 @@
 pub mod cmd;
 pub mod pkg;
 
-mod config;
-mod core;  
+pub mod config;
+pub mod core;  

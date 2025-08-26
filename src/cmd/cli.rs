@@ -4,7 +4,7 @@ use clap::Args;
 pub struct CliArgs {
     /// Name of the task to perform
     #[arg(short, long)]
-    task: String,
+    pub task: String,
 }
 
 pub fn run(cli_args: CliArgs) -> Result<(), std::io::Error> {

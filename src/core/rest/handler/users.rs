@@ -1,16 +1,30 @@
 use crate::core::{
-    domain::users::repository::UserRepository,
+    domain::users::{
+        model::User,
+        repository::UserRepository,
+    },
     rest::handler::{
-        response::{build_error_response, build_success_response},
+        response::{build_error_response, build_success_response, Response, ErrorResponse},
         validator::is_valid_email,
     },
 };
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{web, HttpResponse, Responder, get, post};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
+use utoipa::ToSchema;
 
+/// Get all users in the system
+#[utoipa::path(
+    get,
+    path = "/users",
+    responses(
+        (status = 200, description = "List of all users retrieved successfully", body = Vec<User>),
+        (status = 404, description = "No users found", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    )
+)]
 #[get("/users")]
-async fn get_users(pool: web::Data<PgPool>) -> impl Responder {
+pub async fn get_users(pool: web::Data<PgPool>) -> impl Responder {
     let repo = UserRepository { pool: &pool };
     match repo.find_all().await {
         Ok(users) => {
@@ -35,14 +49,31 @@ async fn get_users(pool: web::Data<PgPool>) -> impl Responder {
     }
 }
 
-
-#[derive(Debug, Serialize, Deserialize)]
+/// Request payload for creating a new user
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CreateUserPayload {
-    name: Option<String>,
-    email: Option<String>,
+    /// Full name of the user
+    #[schema(example = "John Doe")]
+    pub name: Option<String>,
+    /// Email address of the user
+    #[schema(example = "john.doe@example.com")]
+    pub email: Option<String>,
 }
+
+/// Create a new user in the system
+#[utoipa::path(
+    post,
+    path = "/users",
+    request_body = CreateUserPayload,
+    responses(
+        (status = 201, description = "User created successfully", body = User),
+        (status = 400, description = "Invalid request payload", body = ErrorResponse),
+        (status = 409, description = "Email already exists", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    )
+)]
 #[post("/users")]
-async fn create_user(
+pub async fn create_user(
     pool: web::Data<PgPool>,
     payload: web::Json<CreateUserPayload>,
 ) -> impl Responder {

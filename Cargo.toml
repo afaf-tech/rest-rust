@@ -18,3 +18,5 @@ clap = { version = "4.0", features = ["derive"] }
 futures = "0.3.31"
 fern = "0.6"
 regex = "1.11.1"
+utoipa = { version = "4.2", features = ["actix_extras", "uuid", "chrono"] }
+utoipa-swagger-ui = { version = "6.0", features = ["actix-web"] }

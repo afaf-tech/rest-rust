@@ -1,5 +1,5 @@
 mod server;
-mod cli;
+pub mod cli;
 
 use clap::{Parser, Subcommand};
 

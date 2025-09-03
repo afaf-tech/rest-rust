@@ -9,3 +9,25 @@
 .github
 
 .DS_Store
+
+**/mutants.out*/
+
+**/*.rs.bk
+
+debug
+
+var
+
+log
+
+.idea
+
+.claude
+
+CLAUDE.md
+
+.vscode
+
+.DS_Store
+
+ROADMAP.md

@@ -135,6 +135,11 @@ criterion/
 *.rej
 .node_modules/
 vendor/
+**/mutants.out*/
+debug
+var
+log
+ROADMAP.md
 
 # =============================================================================
 # AI Assistants & Code Agents

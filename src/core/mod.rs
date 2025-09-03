@@ -1,2 +1,2 @@
-pub mod rest;
 pub mod domain;
+pub mod rest;

@@ -26,7 +26,10 @@ pub async fn run_rest() -> std::io::Result<()> {
         "JWT expiration set to {} hours",
         config.jwt_expiration_hours
     );
-    log::info!("📚 API Documentation: http://{}/swagger-ui/", config.rest_url);
+    log::info!(
+        "📚 API Documentation: http://{}/swagger-ui/",
+        config.rest_url
+    );
     log::info!("🔗 Available endpoints:");
     log::info!("  • GET  /users - List all users");
     log::info!("  • POST /users - Create new user");

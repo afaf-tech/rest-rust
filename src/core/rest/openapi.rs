@@ -17,7 +17,7 @@ use utoipa::OpenApi;
         // User management endpoints
         crate::core::rest::handler::users::get_users,
         crate::core::rest::handler::users::create_user,
-        
+
         // Authentication endpoints
         crate::core::rest::handler::auth::register,
         crate::core::rest::handler::auth::login,
@@ -31,7 +31,7 @@ use utoipa::OpenApi;
             User,
             PublicUser,
             UserRole,
-            
+
             // Request/Response types
             CreateUserRequest,
             CreateUserPayload,
@@ -39,10 +39,10 @@ use utoipa::OpenApi;
             AuthResponse,
             ChangePasswordRequest,
             CreateUserWithRoleRequest,
-            
+
             // Error handling
             ErrorResponse,
-            
+
             // Response wrappers
             Response<User>,
             Response<Vec<User>>,

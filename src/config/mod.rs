@@ -13,7 +13,7 @@ pub struct Config {
 
 impl Config {
     pub fn from_env() -> Self {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         Self {
             database_url: env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
             rest_url: env::var("REST_URL").expect("REST_URL must be set"),

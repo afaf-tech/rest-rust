@@ -7,8 +7,8 @@ mod tests {
         let args = CliArgs {
             task: String::from("test_task"),
         };
-        
+
         let result = run(args);
         assert!(result.is_ok());
     }
-} 
+}

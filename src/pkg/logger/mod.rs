@@ -16,19 +16,13 @@ pub fn setup_logger(conf: &Config) {
         .create(true)
         .append(true)
         .open(&info_log_path)
-        .expect(&format!(
-            "Failed to open info log file: {:?}",
-            info_log_path
-        ));
+        .unwrap_or_else(|_| panic!("Failed to open info log file: {:?}", info_log_path));
 
     let error_log_file = OpenOptions::new()
         .create(true)
         .append(true)
         .open(&error_log_path)
-        .expect(&format!(
-            "Failed to open error log file: {:?}",
-            error_log_path
-        ));
+        .unwrap_or_else(|_| panic!("Failed to open error log file: {:?}", error_log_path));
 
     // Define the formatter once
     let formatter =

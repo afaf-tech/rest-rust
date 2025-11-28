@@ -1,6 +1,6 @@
-use crate::{config::Config, pkg::logger::setup_logger};
 use crate::core::rest::middleware::http_logger::HttpLogger;
 use crate::core::rest::router;
+use crate::{config::Config, pkg::logger::setup_logger};
 use actix_web::{App, HttpServer};
 use sqlx::PgPool;
 

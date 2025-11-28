@@ -1,11 +1,11 @@
-use utoipa::OpenApi;
 use crate::core::{
     domain::users::model::User,
     rest::handler::{
-        response::{ErrorResponse, Response, Meta},
+        response::{ErrorResponse, Meta, Response},
         users::CreateUserPayload,
     },
 };
+use utoipa::OpenApi;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -40,4 +40,4 @@ use crate::core::{
         )
     )
 )]
-pub struct ApiDoc; 
+pub struct ApiDoc;

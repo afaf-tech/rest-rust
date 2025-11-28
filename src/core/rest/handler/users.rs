@@ -1,14 +1,10 @@
 use crate::core::{
-    domain::users::{
-        model::User,
-        repository::UserRepository,
-    },
+    domain::users::repository::UserRepository,
     rest::handler::{
-        response::{build_error_response, build_success_response, Response, ErrorResponse},
-        validator::is_valid_email,
+        response::build_error_response, response::build_success_response, validator::is_valid_email,
     },
 };
-use actix_web::{web, HttpResponse, Responder, get, post};
+use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use utoipa::ToSchema;
@@ -29,12 +25,14 @@ pub async fn get_users(pool: web::Data<PgPool>) -> impl Responder {
     match repo.find_all().await {
         Ok(users) => {
             // Return a structured success response
-            HttpResponse::Ok().json(build_success_response(users, "Users retrieved successfully."))
+            HttpResponse::Ok().json(build_success_response(
+                users,
+                "Users retrieved successfully.",
+            ))
         }
         Err(sqlx::Error::RowNotFound) => {
             // Handle case where no users are found
-            HttpResponse::NotFound()
-                .json(build_error_response("not_found", "No users found."))
+            HttpResponse::NotFound().json(build_error_response("not_found", "No users found."))
         }
         Err(e) => {
             // Log the error for debugging
@@ -82,13 +80,17 @@ pub async fn create_user(
     // Deserialization errors
     let name = match payload.name {
         Some(name) => name,
-        None => return HttpResponse::BadRequest()
-            .json(build_error_response("bad_request", "Name is required.")),
+        None => {
+            return HttpResponse::BadRequest()
+                .json(build_error_response("bad_request", "Name is required."))
+        }
     };
     let email = match payload.email {
         Some(email) => email,
-        None => return HttpResponse::BadRequest()
-            .json(build_error_response("bad_request", "Email is required.")),
+        None => {
+            return HttpResponse::BadRequest()
+                .json(build_error_response("bad_request", "Email is required."))
+        }
     };
 
     // Validate input
@@ -100,17 +102,14 @@ pub async fn create_user(
         return HttpResponse::BadRequest()
             .json(build_error_response("bad_request", "Invalid email format."));
     }
-    
+
     let repo = UserRepository { pool: &pool };
     match repo.create_user(&name, &email).await {
         Ok(user) => {
             HttpResponse::Created().json(build_success_response(user, "User created successfully."))
         }
         Err(sqlx::Error::Database(db_err)) => {
-            if db_err
-                .constraint()
-                .map_or(false, |c| c == "users_email_key")
-            {
+            if db_err.constraint() == Some("users_email_key") {
                 HttpResponse::Conflict().json(build_error_response("conflict", "Email is in use."))
             } else {
                 HttpResponse::InternalServerError().json(build_error_response(

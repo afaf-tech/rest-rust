@@ -4,13 +4,13 @@ use actix_web::{
 };
 use futures::future::{ok, Ready};
 use log::info;
+use serde_json::json;
 use std::{
     future::Future,
     pin::Pin,
     task::{Context, Poll},
     time::Instant,
 };
-use serde_json::json;
 
 pub struct HttpLogger;
 
@@ -50,7 +50,7 @@ where
         let start_time = Instant::now();
         let method = req.method().to_string();
         let uri = req.uri().to_string();
-        
+
         // Clone the User-Agent header value to avoid borrowing 'req'
         let user_agent = req
             .headers()
@@ -58,15 +58,15 @@ where
             .and_then(|value| value.to_str().ok())
             .unwrap_or("-")
             .to_string(); // Clone to make it owned
-    
+
         let fut = self.service.call(req);
-    
+
         Box::pin(async move {
             let res = fut.await?;
             let duration = start_time.elapsed();
             let latency = format!("{:?}", duration);
             let status = res.status().as_u16();
-    
+
             // Log essential data including the cloned User-Agent
             info!(
                 "{}",
@@ -78,9 +78,8 @@ where
                     "user_agent": user_agent,  // Use the owned User-Agent here
                 })
             );
-    
+
             Ok(res)
         })
     }
-    
 }

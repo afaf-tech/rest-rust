@@ -19,7 +19,7 @@ impl<'a> UserRepository<'a> {
         sqlx::query_as::<_, User>(
             "INSERT INTO users (id, name, email) VALUES ($1, $2, $3) RETURNING *",
         )
-        .bind(Uuid::new_v4())  
+        .bind(Uuid::new_v4())
         .bind(name)
         .bind(email)
         .fetch_one(self.pool)

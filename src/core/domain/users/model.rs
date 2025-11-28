@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use sqlx::FromRow;
 use utoipa::ToSchema;
+use uuid::Uuid;
 
 /// Represents a user in the system
 #[derive(Debug, Serialize, Deserialize, FromRow, ToSchema)]

@@ -1,0 +1,65 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: rest-rust-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rest_rust_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Application (development mode with hot reload)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: rest-rust-app
+    ports:
+      - "9000:9000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/rest_rust_db
+      REST_URL: 0.0.0.0:9000
+      LOG_DIR: var/log
+      LOG_NAME: afaf_rest_rust
+      RUST_LOG: debug
+    volumes:
+      - .:/app
+      - cargo_cache:/usr/local/cargo/registry
+      - target_cache:/app/target
+    depends_on:
+      db:
+        condition: service_healthy
+    command: cargo watch -x 'run -- server'
+
+  # Migration runner (one-off service)
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: rest-rust-migrate
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/rest_rust_db
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sqlx migrate run
+    profiles:
+      - migrate
+
+volumes:
+  postgres_data:
+  cargo_cache:
+  target_cache:

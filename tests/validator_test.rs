@@ -20,4 +20,4 @@ mod tests {
         assert!(!is_valid_email("user space@example.com"));
         assert!(!is_valid_email("user@example..com"));
     }
-} 
+}

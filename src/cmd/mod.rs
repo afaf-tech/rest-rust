@@ -1,10 +1,7 @@
-mod server;
 pub mod cli;
+mod server;
 
 use clap::{Parser, Subcommand};
-
-
-
 
 #[derive(Parser, Debug)]
 #[command(name = "Afaf REST Rust")]
@@ -25,7 +22,7 @@ enum Commands {
 pub fn run() -> Result<(), std::io::Error> {
     let args = Args::parse();
     match args.command {
-        Commands::Server => server::run_rest(),  // Ensure this returns a Result
+        Commands::Server => server::run_rest(), // Ensure this returns a Result
         Commands::Cli(cli_args) => cli::run(cli_args), // Ensure this returns a Result
     }
 }

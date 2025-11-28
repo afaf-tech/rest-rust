@@ -20,7 +20,7 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 Before you begin, ensure you have the following installed:
 
-- **Rust** (1.80 or higher recommended)
+- **Rust** (1.81 or higher recommended)
   ```bash
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
   rustup default stable

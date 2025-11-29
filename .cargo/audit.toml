@@ -1,0 +1,11 @@
+# Configuration for cargo-audit
+# Ignores unfixable vulnerabilities that would otherwise block CI/CD
+
+[advisories]
+# Ignore specific vulnerabilities that have no fix available
+ignore = [
+    "RUSTSEC-2023-0071",  # rsa: Marvin Attack - no fix available, transitive via sqlx-mysql (we only use postgres)
+]
+
+# Allow informational warnings (like unmaintained crates) without failing
+informational_warnings = ["unmaintained"]

@@ -76,6 +76,8 @@ jobs:
           REST_URL: localhost:9000
           LOG_DIR: var/log
           LOG_NAME: afaf_rest_rust
+          JWT_SECRET: test-secret-key-for-ci-only
+          JWT_EXPIRATION_HOURS: 24
       
       - name: Build release binary
         run: cargo build --release

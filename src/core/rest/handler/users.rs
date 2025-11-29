@@ -1,7 +1,8 @@
 use crate::core::{
     domain::users::repository::UserRepository,
     rest::handler::{
-        response::build_error_response, response::build_success_response, validator::is_valid_email,
+        response::{build_error_response, build_success_response},
+        validator::is_valid_email,
     },
 };
 use actix_web::{get, post, web, HttpResponse, Responder};
@@ -13,6 +14,7 @@ use utoipa::ToSchema;
 #[utoipa::path(
     get,
     path = "/users",
+    tag = "users",
     responses(
         (status = 200, description = "List of all users retrieved successfully", body = Vec<User>),
         (status = 404, description = "No users found", body = ErrorResponse),
@@ -62,6 +64,7 @@ pub struct CreateUserPayload {
 #[utoipa::path(
     post,
     path = "/users",
+    tag = "users",
     request_body = CreateUserPayload,
     responses(
         (status = 201, description = "User created successfully", body = User),

@@ -15,6 +15,7 @@
 Cargo.lock
 !Cargo.lock
 .cargo/
+!.cargo/audit.toml
 *.rlib
 
 # =============================================================================
@@ -135,6 +136,11 @@ criterion/
 *.rej
 .node_modules/
 vendor/
+**/mutants.out*/
+debug
+var
+log
+ROADMAP.md
 
 # =============================================================================
 # AI Assistants & Code Agents

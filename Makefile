@@ -1,135 +1,236 @@
-.PHONY: help dev run test lint fmt clippy check docker-up docker-down docker-build migrate migrate-down clean
+# Makefile for AFAF REST Rust API
 
 # Default target
 .DEFAULT_GOAL := help
 
+# Variables
+CARGO := cargo
+DATABASE_URL := postgresql://postgres:secret@localhost/afaf_rest_rust
+
 # Colors for output
-CYAN := \033[36m
+BOLD := \033[1m
 GREEN := \033[32m
 YELLOW := \033[33m
-RESET := \033[0m
+RED := \033[31m
+NC := \033[0m # No Color
 
-## help: Show this help message
-help:
-	@echo "$(CYAN)Afaf Rest Rust - Development Commands$(RESET)"
+##@ Development Commands
+
+.PHONY: help
+help: ## Display this help
+	@echo "$(BOLD)AFAF REST Rust API - Development Commands$(NC)"
 	@echo ""
-	@echo "$(GREEN)Usage:$(RESET)"
-	@echo "  make $(YELLOW)<target>$(RESET)"
-	@echo ""
-	@echo "$(GREEN)Development:$(RESET)"
-	@grep -E '^## [a-zA-Z_-]+:' $(MAKEFILE_LIST) | sed 's/## /  /' | sed 's/:/:$(RESET)\t/'
+	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make $(YELLOW)<target>$(NC)\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  $(YELLOW)%-15s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(BOLD)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-## dev: Start development server with auto-reload (requires cargo-watch)
-dev:
-	cargo watch -x 'run -- server'
+.PHONY: install
+install: ## Install dependencies
+	@echo "$(GREEN)Installing dependencies...$(NC)"
+	$(CARGO) --version
+	$(CARGO) install sqlx-cli --no-default-features --features rustls,postgres
 
-## run: Start the server
-run:
-	cargo run -- server
+##@ Build Commands
 
-## test: Run all tests
-test:
-	cargo test
+.PHONY: check
+check: ## Quick compile check
+	@echo "$(GREEN)Running cargo check...$(NC)"
+	$(CARGO) check
 
-## lint: Run clippy and check formatting
-lint: clippy fmt-check
+.PHONY: build
+build: ## Build the project
+	@echo "$(GREEN)Building project...$(NC)"
+	$(CARGO) build
 
-## clippy: Run clippy linter
-clippy:
-	cargo clippy --all-targets -- -D warnings
+.PHONY: build-release
+build-release: ## Build for release
+	@echo "$(GREEN)Building release version...$(NC)"
+	$(CARGO) build --release
 
-## fmt: Format code with rustfmt
-fmt:
-	cargo fmt
+.PHONY: clean
+clean: ## Clean build artifacts
+	@echo "$(GREEN)Cleaning build artifacts...$(NC)"
+	$(CARGO) clean
 
-## fmt-check: Check code formatting without modifying files
-fmt-check:
-	cargo fmt --check
+##@ Test Commands
 
-## check: Quick compilation check
-check:
-	cargo check
+.PHONY: test
+test: ## Run all tests
+	@echo "$(GREEN)Running tests...$(NC)"
+	$(CARGO) test
 
-## build: Build release binary
-build:
-	cargo build --release
+.PHONY: test-verbose
+test-verbose: ## Run tests with verbose output
+	@echo "$(GREEN)Running tests (verbose)...$(NC)"
+	$(CARGO) test -- --nocapture
 
-## clean: Clean build artifacts
-clean:
-	cargo clean
+.PHONY: test-unit
+test-unit: ## Run unit tests only
+	@echo "$(GREEN)Running unit tests...$(NC)"
+	$(CARGO) test --lib
 
-# =============================================================================
-# Database Commands
-# =============================================================================
+.PHONY: test-integration
+test-integration: ## Run integration tests only
+	@echo "$(GREEN)Running integration tests...$(NC)"
+	$(CARGO) test --test "*"
 
-## migrate: Run database migrations
-migrate:
+.PHONY: test-users
+test-users: ## Run user domain tests
+	@echo "$(GREEN)Running user domain tests...$(NC)"
+	$(CARGO) test users
+
+##@ Database Commands
+
+.PHONY: db-setup
+db-setup: ## Set up database (create and migrate)
+	@echo "$(GREEN)Setting up database...$(NC)"
+	@echo "Creating database..."
+	-docker exec postgres_container createdb -U postgres afaf_rest_rust 2>/dev/null || echo "Database might already exist"
+	$(MAKE) db-migrate
+
+.PHONY: db-migrate
+db-migrate: ## Run database migrations
+	@echo "$(GREEN)Running database migrations...$(NC)"
 	sqlx migrate run
 
-## migrate-down: Rollback last migration
-migrate-down:
+.PHONY: db-migrate-revert
+db-migrate-revert: ## Revert last migration
+	@echo "$(YELLOW)Reverting last migration...$(NC)"
 	sqlx migrate revert
 
-## migrate-create: Create a new migration (usage: make migrate-create name=migration_name)
-migrate-create:
-	sqlx migrate add $(name)
+.PHONY: db-reset
+db-reset: ## Reset database (drop, create, migrate)
+	@echo "$(YELLOW)Resetting database...$(NC)"
+	@echo "Terminating connections..."
+	-docker exec postgres_container psql -U postgres -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = 'afaf_rest_rust' AND pid <> pg_backend_pid();" 2>/dev/null
+	@echo "Dropping database..."
+	-docker exec postgres_container dropdb -U postgres afaf_rest_rust 2>/dev/null
+	@echo "Creating database..."
+	docker exec postgres_container createdb -U postgres afaf_rest_rust
+	$(MAKE) db-migrate
 
-# =============================================================================
-# Docker Commands
-# =============================================================================
+.PHONY: db-status
+db-status: ## Check migration status
+	@echo "$(GREEN)Checking migration status...$(NC)"
+	sqlx migrate info
 
-## docker-up: Start Docker development environment
-docker-up:
-	docker-compose up -d
+##@ Server Commands
 
-## docker-down: Stop Docker development environment
-docker-down:
-	docker-compose down
+.PHONY: run
+run: ## Run the server
+	@echo "$(GREEN)Starting server...$(NC)"
+	$(CARGO) run server
 
-## docker-build: Build Docker images
-docker-build:
-	docker-compose build
+.PHONY: run-dev
+run-dev: ## Run server with auto-reload (requires cargo-watch)
+	@echo "$(GREEN)Starting server in development mode...$(NC)"
+	@command -v cargo-watch >/dev/null 2>&1 || { echo "$(RED)cargo-watch not found. Install with: cargo install cargo-watch$(NC)"; exit 1; }
+	cargo watch -x "run server"
 
-## docker-logs: Show Docker container logs
-docker-logs:
-	docker-compose logs -f
+.PHONY: run-cli
+run-cli: ## Run CLI with task (usage: make run-cli TASK=task_name)
+	@echo "$(GREEN)Running CLI task: $(TASK)$(NC)"
+	$(CARGO) run cli --task "$(TASK)"
 
-## docker-migrate: Run migrations in Docker
-docker-migrate:
-	docker-compose run --rm migrate
+##@ Code Quality Commands
 
-## docker-clean: Stop containers and remove volumes
-docker-clean:
-	docker-compose down -v
+.PHONY: fmt
+fmt: ## Format code
+	@echo "$(GREEN)Formatting code...$(NC)"
+	$(CARGO) fmt
 
-## docker-shell: Open shell in app container
-docker-shell:
-	docker-compose exec app bash
+.PHONY: fmt-check
+fmt-check: ## Check code formatting
+	@echo "$(GREEN)Checking code formatting...$(NC)"
+	$(CARGO) fmt --check
 
-## docker-db: Open psql shell in database container
-docker-db:
-	docker-compose exec db psql -U postgres -d rest_rust_db
+.PHONY: clippy
+clippy: ## Run clippy linter
+	@echo "$(GREEN)Running clippy...$(NC)"
+	$(CARGO) clippy -- -D warnings
 
-# =============================================================================
-# CI Commands
-# =============================================================================
+.PHONY: fix
+fix: ## Fix common issues automatically
+	@echo "$(GREEN)Fixing issues automatically...$(NC)"
+	$(CARGO) fix --allow-dirty --allow-staged
+	$(CARGO) clippy --fix --allow-dirty --allow-staged
 
-## ci: Run all CI checks (lint, test, build)
-ci: lint test build
-	@echo "$(GREEN)All CI checks passed!$(RESET)"
+##@ Development Workflow
 
-## audit: Run security audit on dependencies
-audit:
-	cargo audit
+.PHONY: dev-setup
+dev-setup: install db-setup ## Complete development setup
+	@echo "$(GREEN)Development setup complete!$(NC)"
+	@echo "$(YELLOW)Next steps:$(NC)"
+	@echo "  1. Update .env with your configuration"
+	@echo "  2. Run 'make run' to start the server"
+	@echo "  3. Visit http://localhost:9000/swagger-ui/ for API docs"
 
-# =============================================================================
-# Documentation Commands
-# =============================================================================
+.PHONY: ci
+ci: fmt-check clippy test ## Run CI checks (format, lint, test)
+	@echo "$(GREEN)All CI checks passed!$(NC)"
 
-## docs: Generate and open documentation
-docs:
-	cargo doc --open
+.PHONY: pre-commit
+pre-commit: fmt clippy test ## Run pre-commit checks (format, lint, test)
+	@echo "$(GREEN)Pre-commit checks completed!$(NC)"
 
-## docs-build: Generate documentation
-docs-build:
-	cargo doc --no-deps
+.PHONY: full-check
+full-check: clean build test clippy fmt-check ## Full project check
+	@echo "$(GREEN)Full project check completed successfully!$(NC)"
+
+##@ Docker Commands
+
+.PHONY: docker-db-start
+docker-db-start: ## Start PostgreSQL in Docker
+	@echo "$(GREEN)Starting PostgreSQL container...$(NC)"
+	@if [ $$(docker ps -q -f name=postgres_container) ]; then \
+		echo "$(YELLOW)PostgreSQL container already running$(NC)"; \
+	else \
+		docker start postgres_container || \
+		docker run --name postgres_container -e POSTGRES_PASSWORD=secret -p 5432:5432 -d postgres:13; \
+	fi
+
+.PHONY: docker-db-stop
+docker-db-stop: ## Stop PostgreSQL container
+	@echo "$(YELLOW)Stopping PostgreSQL container...$(NC)"
+	-docker stop postgres_container
+
+.PHONY: docker-db-logs
+docker-db-logs: ## Show PostgreSQL container logs
+	@echo "$(GREEN)PostgreSQL container logs:$(NC)"
+	docker logs postgres_container
+
+##@ Documentation
+
+.PHONY: docs
+docs: ## Generate and open documentation
+	@echo "$(GREEN)Generating documentation...$(NC)"
+	$(CARGO) doc --open
+
+.PHONY: swagger
+swagger: ## Open Swagger UI (requires server to be running)
+	@echo "$(GREEN)Opening Swagger UI...$(NC)"
+	@echo "Make sure the server is running with 'make run'"
+	@command -v open >/dev/null 2>&1 && open http://localhost:9000/swagger-ui/ || echo "Visit http://localhost:9000/swagger-ui/"
+
+##@ Utility Commands
+
+.PHONY: env-check
+env-check: ## Check environment setup
+	@echo "$(GREEN)Environment Check:$(NC)"
+	@echo "Rust version: $$(rustc --version)"
+	@echo "Cargo version: $$(cargo --version)"
+	@echo "SQLx CLI: $$(sqlx --version 2>/dev/null || echo '$(RED)Not installed$(NC)')"
+	@echo "Docker: $$(docker --version 2>/dev/null || echo '$(RED)Not available$(NC)')"
+	@echo "PostgreSQL container: $$(docker ps --format 'table {{.Names}}\t{{.Status}}' | grep postgres_container || echo '$(RED)Not running$(NC)')"
+	@echo ""
+	@echo "Environment files:"
+	@echo "  .env: $$([ -f .env ] && echo '$(GREEN)✓ exists$(NC)' || echo '$(RED)✗ missing$(NC)')"
+	@echo "  CLAUDE.md: $$([ -f CLAUDE.md ] && echo '$(GREEN)✓ exists$(NC)' || echo '$(RED)✗ missing$(NC)')"
+
+.PHONY: logs
+logs: ## Show application logs
+	@echo "$(GREEN)Showing logs from var/log/$(NC)"
+	@if [ -d "var/log" ]; then \
+		tail -f var/log/afaf_rest_rust.log 2>/dev/null || echo "$(YELLOW)No log files found$(NC)"; \
+	else \
+		echo "$(YELLOW)Log directory not found$(NC)"; \
+	fi
+>>>>>>> f3d2c72 (feat: implement comprehensive authentication and authorization system)

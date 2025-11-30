@@ -3,26 +3,32 @@ use crate::config::Config;
 use fern::Dispatch;
 use log::LevelFilter;
 use serde_json::json;
-use std::fs::OpenOptions;
+use std::fs::{create_dir_all, OpenOptions};
 use std::path::PathBuf;
 
 pub fn setup_logger(conf: &Config) {
     // Build file paths for logs dynamically
-    let info_log_path = PathBuf::from(&conf.log_dir).join(format!("{}.info.log", conf.log_name));
-    let error_log_path = PathBuf::from(&conf.log_dir).join(format!("{}.error.log", conf.log_name));
+    let log_dir = PathBuf::from(&conf.log_dir);
+    let info_log_path = log_dir.join(format!("{}.info.log", conf.log_name));
+    let error_log_path = log_dir.join(format!("{}.error.log", conf.log_name));
+
+    // Create log directory if it doesn't exist
+    if let Err(e) = create_dir_all(&log_dir) {
+        panic!("Failed to create log directory {:?}: {}", log_dir, e);
+    }
 
     // Open files for logging
     let info_log_file = OpenOptions::new()
         .create(true)
         .append(true)
         .open(&info_log_path)
-        .unwrap_or_else(|_| panic!("Failed to open info log file: {:?}", info_log_path));
+        .unwrap_or_else(|e| panic!("Failed to open info log file {:?}: {}", info_log_path, e));
 
     let error_log_file = OpenOptions::new()
         .create(true)
         .append(true)
         .open(&error_log_path)
-        .unwrap_or_else(|_| panic!("Failed to open error log file: {:?}", error_log_path));
+        .unwrap_or_else(|e| panic!("Failed to open error log file {:?}: {}", error_log_path, e));
 
     // Define the formatter once
     let formatter =

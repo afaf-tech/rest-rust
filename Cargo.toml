@@ -2,6 +2,7 @@
 name = "afaf-rest-rust"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.85"
 
 [dependencies]
 actix-web = "4.0"
